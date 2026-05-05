@@ -30,12 +30,22 @@ Full ASLR bypass, no brute force, no /proc access.
 
 Tested on Ubuntu 24.04, GCC 13.3.0, QEMU commit `b6a7d06213` (v11.0.0-rc2).
 
-### Individual bugs (with ASan)
+### Setup
+
+Clone this repo and the vulnerable QEMU commit:
 
 ```
+git clone https://github.com/0xCyberstan/cxl-mailbox-overflow.git
 git clone https://gitlab.com/qemu-project/qemu.git
 cd qemu && git checkout b6a7d06213
-cp /path/to/poc/cxl-mbox-test.c tests/qtest/
+```
+
+### Individual bugs (with ASan)
+
+Copy the test file into the QEMU tree and register it in the build:
+
+```
+cp ../cxl-mailbox-overflow/poc/cxl-mbox-test.c tests/qtest/
 ```
 
 Add `'cxl-mbox-test'` alongside `'cxl-test'` in `tests/qtest/meson.build`:
@@ -44,6 +54,8 @@ Add `'cxl-mbox-test'` alongside `'cxl-test'` in `tests/qtest/meson.build`:
 - (config_all_devices.has_key('CONFIG_CXL') ? ['cxl-test'] : [])
 + (config_all_devices.has_key('CONFIG_CXL') ? ['cxl-test', 'cxl-mbox-test'] : [])
 ```
+
+Build and run:
 
 ```
 mkdir build && cd build
@@ -57,8 +69,8 @@ QTEST_QEMU_BINARY=./qemu-system-x86_64 ./tests/qtest/cxl-mbox-test --verbose
 The chain requires stable binary offsets so ASan must be off. The hardcoded values in `cxl-escape-poc.c` (SYSTEM_PLT_OFFSET, IDENTIFY_HANDLER_OFFSET) are specific to the exact build described above. If you're building with a different compiler, optimization level, or QEMU commit, you'll need to update them:
 
 ```
-objdump -t qemu-system-x86_64 | grep system@plt
-objdump -t qemu-system-x86_64 | grep cmd_infostat_identify
+objdump -t build/qemu-system-x86_64 | grep system@plt
+objdump -t build/qemu-system-x86_64 | grep cmd_infostat_identify
 ```
 
 For the structure layout offsets, use GDB:
@@ -67,15 +79,18 @@ For the structure layout offsets, use GDB:
 (gdb) ptype /o CXLType3Dev
 ```
 
-Then:
+Once offsets are confirmed or updated, copy the escape PoC into the QEMU tree:
 
 ```
-cp /path/to/poc/cxl-escape-poc.c tests/qtest/
+cp ../cxl-mailbox-overflow/poc/cxl-escape-poc.c tests/qtest/
 ```
 
 Add `'cxl-escape-poc'` in `tests/qtest/meson.build` the same way as above.
 
+Build and run:
+
 ```
+cd build
 ../configure --target-list=x86_64-softmmu
 ninja -j$(nproc) qemu-system-x86_64 tests/qtest/cxl-escape-poc
 rm -f /tmp/pwned-by-cxl-guest /tmp/x
