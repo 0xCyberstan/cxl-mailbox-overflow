@@ -23,8 +23,8 @@ Full ASLR bypass, no brute force, no /proc access.
 
 ## Files
 
-- `cxl-escape-poc.c` - Full escape chain qtest PoC (bugs 1 + 2 chained)
-- `cxl-mbox-test.c` - Individual bug PoCs with ASan validation (bugs 2 + 3)
+- `poc/cxl-escape-poc.c` - Full escape chain qtest PoC (bugs 1 + 2 chained)
+- `poc/cxl-mbox-test.c` - Individual bug PoCs with ASan validation (bugs 2 + 3)
 
 ## Build and run
 
@@ -35,7 +35,7 @@ Tested on Ubuntu 24.04, GCC 13.3.0, QEMU commit `b6a7d06213` (v11.0.0-rc2).
 ```
 git clone https://gitlab.com/qemu-project/qemu.git
 cd qemu && git checkout b6a7d06213
-cp /path/to/cxl-mbox-test.c tests/qtest/
+cp /path/to/poc/cxl-mbox-test.c tests/qtest/
 ```
 
 Add `'cxl-mbox-test'` alongside `'cxl-test'` in `tests/qtest/meson.build`:
@@ -70,7 +70,7 @@ For the structure layout offsets, use GDB:
 Then:
 
 ```
-cp /path/to/cxl-escape-poc.c tests/qtest/
+cp /path/to/poc/cxl-escape-poc.c tests/qtest/
 ```
 
 Add `'cxl-escape-poc'` in `tests/qtest/meson.build` the same way as above.
